@@ -5,6 +5,7 @@ library(ggplot2)
 library(corrplot)
 library(cowplot)
 
+
 # select only initially applicable columns - keep all but urls
 df <- listings %>% select('id', 'name', 'host_location', 'host_neighbourhood',
                           'neighbourhood_cleansed', 'zipcode', 'property_type', 'bedrooms', 'square_feet', 'security_deposit', 'minimum_nights',
@@ -46,3 +47,18 @@ numplot <- function(df, explan, resp) {
 plotlist <- lapply(numvars, function(x) numplot(df, x, target))
 lapply(numvars, function(x) numplot(df, x, target))
 plot_grid(plotlist = plotlist)
+
+# check for distribution of review ratings
+summary(main$review_scores_rating)
+main %>% ggplot(aes(x=review_scores_rating)) + geom_histogram(bins=60)
+
+# you can see here that there isn't really any correlation between price and rating
+main %>% ggplot(aes(x=price, y=review_scores_rating)) + geom_point(aes(colour=property_type))
+
+# let's see how the rating looks with the different comment scores - once again not much
+main %>% ggplot(aes(x=total_is_clean, y=review_scores_rating)) + geom_point()
+
+# we can try looking at a specific price point - maybe customers expect different for different price points?
+# the spread is much larger for below 250... let's look there for a start
+main %>% filter(price < 250) %>% ggplot(aes(x=total_good_location, y=review_scores_rating)) + geom_point()
+
