@@ -1,2 +1,2 @@
 # stats2-project1
-Multiple regression using Zillow API to predict home buyer prices in Dallas, TX
+Multiple regression using Airbnb data set to predict review scores in Seattle, WA.
