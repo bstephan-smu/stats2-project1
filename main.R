@@ -15,3 +15,6 @@ calendar_reviews <- reviews %>% left_join(avg_calendar, by=c('listing_id'))
 
 # merge listing information onto pricing info and review
 main <- calendar_reviews %>% left_join(listings, by=c('listing_id' = 'id'))
+main$comments_is_clean <- grepl('.*clean.*', main$comments, ignore.case=TRUE)
+main$comments_good_location <- grepl('.*location*|.*close.*', main$comments, ignore.case=TRUE)
+main$comments_customer_service <- grepl('.*friendly*|.*welcome*', main$comments, ignore.case=TRUE)
