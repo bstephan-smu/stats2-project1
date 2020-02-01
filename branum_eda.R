@@ -62,3 +62,6 @@ main %>% ggplot(aes(x=total_is_clean, y=review_scores_rating)) + geom_point()
 # the spread is much larger for below 250... let's look there for a start
 main %>% filter(price < 250) %>% ggplot(aes(x=total_good_location, y=review_scores_rating)) + geom_point()
 
+# let's check out if the number of reviews is an indicator of high review score
+main %>%
+

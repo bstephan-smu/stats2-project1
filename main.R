@@ -11,6 +11,7 @@ reviews <- read.csv(paste(data_root, "/resources/data/reviews.csv", sep=""))
 
 # fixing price data type for listings data
 listings$price <- as.numeric(gsub('\\$', '', listings$price))
+listings$cleaning_fee <- as.numeric(gsub('\\$', '', cleaning_fee))
 
 # find average price per night for each unit...join onto reviews
 avg_calendar <- calendar %>% group_by(listing_id) %>% summarize(mean_price = mean(price), na.rm=TRUE)
