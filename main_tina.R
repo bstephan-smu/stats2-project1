@@ -1,16 +1,11 @@
-library(here)
+
 library(tidyverse)
 library(GGally)
+library(caret)
 
 # locate project root directory
-data_root <- here()
 
-# read in csv files from resources into dataframes
-#calender <- read.csv(paste(data_root, "/resources/data/calendar.csv", sep=""))
-#listings <- read.csv(paste(data_root, "/resources/data/listings.csv", sep=""))
-#reviews <- read.csv(paste(data_root, "/resources/data/reviews.csv", sep=""))
-
-calender <- read.csv("resources/data/calendar.csv")
+calendar <- read.csv("resources/data/calendar.csv")
 listings <- read.csv("resources/data/listings.csv")
 reviews <- read.csv("resources/data/reviews.csv")
 
@@ -34,8 +29,10 @@ listings_edited = listings %>%
   mutate(log_reviews = log(number_of_reviews+1)) %>%
   mutate(price = as.numeric(gsub('\\$', '', price)))  %>%
   mutate(log_price = log(price))%>%
+  filter(!is.na(log_price)) %>%
   mutate(cleaning_fee = as.numeric(gsub('\\$', '', cleaning_fee)))
   
+summary(listings$last_scraped)
 listings_edited$property_type = droplevels(listings_edited$property_type)
 listings_edited$zipcode = droplevels(listings_edited$zipcode)
 listings_edited$neighbourhood_group_cleansed = droplevels(listings_edited$neighbourhood_group_cleansed)
@@ -67,6 +64,56 @@ airbnb_price_lm = lm(data=listings_edited, log_price~neighbourhood_group_cleanse
 summary(airbnb_price_lm)          
 plot(airbnb_price_lm)
 
+listings_edited = listings_edited %>%
+  select(c(log_price,neighbourhood_group_cleansed,host_is_superhost,
+           property_type,has_parking,allows_pets, room_type, bed_type, 
+           guests_included ,accommodates, cleaning_fee,review_scores_value,
+           review_scores_cleanliness,reviews_per_month,has_hottub,has_wifi,
+           has_fireplace, kid_friendly)) %>%
+  drop_na()
+
+airbnb_price_lm_cv = train(data=listings_edited, log_price~neighbourhood_group_cleansed*has_parking+ 
+                             host_is_superhost + property_type*has_parking + property_type*allows_pets  + 
+                             room_type + bed_type + guests_included + accommodates + cleaning_fee + 
+                             review_scores_value + review_scores_cleanliness + reviews_per_month +
+                             has_hottub + has_wifi + has_fireplace + kid_friendly,
+                           method = "lm",
+                           trControl = trainControl(method = "cv", number = 10, verboseIter = TRUE))
+
+summary(airbnb_price_lm_cv)
+plot(airbnb_price_lm_cv$finalModel)
+airbnb_price_lm_cv
+airbnb_price_lm_cv$finalModel
+
+listings_edited %>%
+  filter(is.na(log_price))
+
+
+str_match(calendar$price, "/$([0-9]+)")
+calendar$price <- as.numeric(gsub('\\$', '', calendar$price)) %>%
+  mutate(price_num = )
+
+
+
+calendar %>%
+  filter(listing_id==241032) %>%
+  mutate(dt = as.Date(date)) %>%
+  ggplot(aes(x=date, y=price)) +
+  geom_point()
+calendar %>% 
+  mutate(available_count = ifelse(available == "t", 1, 0)) %>% 
+  group_by(date) %>% 
+  summarize(total_available = sum(available_count))
+
+summary(reviews)
+review_grouped <- reviews %>%
+  count(date) %>%
+  mutate(date = as.Date(date)) %>%
+  mutate(logcount = log(n))
+summary(review_grouped)
+review_grouped %>%
+  ggplot(aes(x=date, y=logcount)) +
+  geom_point()
 
 
 
