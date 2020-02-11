@@ -1,0 +1,64 @@
+---
+title: "Multiple Regression to Predict "
+author: "Tina Pai, Megan Riley, Branum Stephan"
+output: pdf_document
+---
+
+##Title
+
+
+
+```{r setup, echo=FALSE}
+library(tidyverse)
+library(GGally)
+library(ggplot2)
+library(corrplot)
+library(cowplot)
+library(readr)
+library(glmnet)
+library(caret)
+library(xtable)
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Appendix
+
+###Tables
+
+```{r tables}
+
+```
+
+
+###Figures 
+
+```{r figures}
+
+```
+
+###Code 
+
+```{r main file, eval = FALSE}
+
+```
+
+```{r model file, eval = FALSE}
+
+```
+
+```{r time series file, eval = FALSE}
+
+```
+
+
+
