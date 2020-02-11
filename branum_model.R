@@ -1,6 +1,7 @@
 library(caret)
 library(fastDummies)
 library(skimr)
+library(tidyverse)
 
 # importing datasets from main.r and eda
 source('branum_eda.R')
@@ -12,11 +13,11 @@ listings$log_price <- log(listings$price)
 
 # select variables from listings and create dummy variables and drop nulls
 df <- listings  %>% select(log_price, reviews_per_month, review_scores_location, bedrooms, corrected_cleaning_fee, 
-                           room_type, is_cancellation_strict, neighbourhood_class) %>% drop_na() %>% dummy_cols(remove_first_dummy = TRUE)
+                           room_type, neighbourhood_class) %>% drop_na() %>% dummy_cols(remove_first_dummy = TRUE)
 
 # take dummy output, etc... and use as model columns
 model_df <- df %>% select(log_price, reviews_per_month, review_scores_location, bedrooms, corrected_cleaning_fee, 
-                          'room_type_Private room', 'room_type_Shared room', 'is_cancellation_strict_is_strict',
+                          'room_type_Private room', 'room_type_Shared room',
                           'neighbourhood_class_Lowest Demand', 'neighbourhood_class_Medium Demand')
 
 # ---------------------STEP 1: SPLIT INTO TRAINING AND TEST SETS -------------------------------#
@@ -36,8 +37,15 @@ testData <- model_df[-trainRowNumbers,]
 # -------------------- STEP 2: CHECKING PRELIMINARY MODEL ASSUMPTIONS NO CV --------------------------------#
 
 general_model_no_cv <- lm(log_price ~., data=trainData)
+
+# residual plots
 plot(general_model_no_cv)
 
+# summary statistics and coefficients
+summary(general_model_no_cv)
+
+# AIC
+extractAIC(general_model_no_cv)
 # -------------------- STEP 3: TRAIN MODEL WITH CV -----------------------------------------------------#
 # step 4: train the model
 # define internal cross validation - 10 samples, 5 times
