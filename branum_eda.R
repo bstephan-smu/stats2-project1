@@ -4,23 +4,9 @@ library(tidyverse)
 library(ggplot2)
 library(corrplot)
 library(cowplot)
+library(caret)
+library(skimr)
 
-
-# select only initially applicable columns - keep all but urls
-df <- listings %>% select('id', 'name', 'host_location', 'host_neighbourhood',
-                          'neighbourhood_cleansed', 'zipcode', 'property_type', 'bedrooms', 'square_feet', 'security_deposit', 'minimum_nights',
-                          'availability_30', 'review_scores_rating', 'review_scores_communication', 'license', 'summary', 'neighborhood_overview',
-                          'host_about', 'host_is_superhost', 'host_listings_count', 'host_identity_verified', 'neighbourhood_group_cleansed',
-                          'beds', 'price', 'cleaning_fee', 'maximum_nights', 'availability_60', 'number_of_reviews', 'review_scores_accuracy', 'review_scores_location',
-                          'require_guest_phone_verification', 'host_name', 'host_response_time', 'host_total_listings_count', 'street', 'city',
-                          'smart_location', 'accommodates', 'bed_type', 'weekly_price', 'guests_included', 'availability_90', 'first_review', 'review_scores_cleanliness',
-                          'review_scores_value', 'instant_bookable', 'calculated_host_listings_count', 'description', 'transit', 'host_since', 'host_response_rate',
-                          'neighbourhood', 'bathrooms', 'amenities', 'monthly_price', 'extra_people', 'has_availability', 'availability_365',
-                          'last_review', 'review_scores_checkin', 'cancellation_policy', 'reviews_per_month')
-
-# ensure categorical values are in fact stored as factors
-factor_list <- c('bedrooms', 'minimum_nights', 'beds')
-df <- df %>% mutate_each_(funs(factor), factor_list)
 
 # function to do this all in one go
 correlator  <-  function(df){
@@ -32,36 +18,40 @@ correlator  <-  function(df){
 }
 
 # print out correlation graph for numerical values
-correlator(df)
+cols_list <- c("host_total_listings_count", "accommodates", "bathrooms", "bedrooms", "beds", "square_feet", "price", "cleaning_fee", "guests_included",
+               "minimum_nights", "maximum_nights", "number_of_reviews", "review_scores_rating", "review_scores_cleanliness", "review_scores_location", "review_scores_value",
+               "reviews_per_month", "calculated_host_listings_count", "review_scores_value")
+correlator(listings %>% select(cols_list))
 
-# assess categorical variables via density plots
-target <- "review_scores_rating"
-# step 2, save explanator variable names
-numvars <- df %>% keep(is.numeric) %>% colnames
+# create some custom features
+listings$is_cancellation_strict <- ifelse(listings$cancellation_policy == "strict", "is_strict", "not_strict")
+
+# fixing cleaning fee to fill na values
+listings <- listings %>% group_by(room_type) %>% mutate(corrected_cleaning_fee = 
+                                                          ifelse(is.na(cleaning_fee),0,
+                                                                 cleaning_fee))
+
+# grouping areas by general price point
+listings <- listings %>% mutate(neighbourhood_class = case_when(
+  neighbourhood_group_cleansed == 'Magnolia' ~ "Highest Demand",
+  neighbourhood_group_cleansed == 'Downtown' ~ "Highest Demand",
+  neighbourhood_group_cleansed == "Queen Anne" ~ "Highest Demand",
+  neighbourhood_group_cleansed == "Ballard" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Capitol Hill" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Cascade" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Central Area" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "West Seattle" ~ "Medium Demand",
+  TRUE ~ "Lowest Demand"
+))
 
 
-numplot <- function(df, explan, resp) {
-  ggplot(data = df) + geom_density(aes_string(x = explan, fill = resp), alpha = 0.5)
-}
 
-plotlist <- lapply(numvars, function(x) numplot(df, x, target))
-lapply(numvars, function(x) numplot(df, x, target))
-plot_grid(plotlist = plotlist)
+# create box plots for categorical vs. price
+lyst <- c("is_cancellation_strict", "neighbourhood_group_cleansed",
+          "room_type", "neighbourhood_class", "has_wifi", "has_fireplace",
+          "family_friendly", "has_hottub", "has_parking", "pets_allowed", "host_is_superhost", "bed_type")
+lapply(lyst, function(i)ggplot(listings, aes_string(x=i, y="price")) + 
+         theme(axis.text.x=element_text(angle=90,hjust=1)) + geom_bar(stat = 'summary', fun.y='mean'))
 
-# check for distribution of review ratings
-summary(main$review_scores_rating)
-main %>% ggplot(aes(x=review_scores_rating)) + geom_histogram(bins=60)
 
-# you can see here that there isn't really any correlation between price and rating
-main %>% ggplot(aes(x=price, y=review_scores_rating)) + geom_point(aes(colour=property_type))
-
-# let's see how the rating looks with the different comment scores - once again not much
-main %>% ggplot(aes(x=total_is_clean, y=review_scores_rating)) + geom_point()
-
-# we can try looking at a specific price point - maybe customers expect different for different price points?
-# the spread is much larger for below 250... let's look there for a start
-main %>% filter(price < 250) %>% ggplot(aes(x=total_good_location, y=review_scores_rating)) + geom_point()
-
-# let's check out if the number of reviews is an indicator of high review score
-main %>%
 
