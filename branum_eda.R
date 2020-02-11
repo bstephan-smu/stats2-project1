@@ -20,7 +20,7 @@ correlator  <-  function(df){
 # print out correlation graph for numerical values
 cols_list <- c("host_total_listings_count", "accommodates", "bathrooms", "bedrooms", "beds", "square_feet", "price", "cleaning_fee", "guests_included",
                "minimum_nights", "maximum_nights", "number_of_reviews", "review_scores_rating", "review_scores_cleanliness", "review_scores_location", "review_scores_value",
-               "reviews_per_month")
+               "reviews_per_month", "calculated_host_listings_count", "review_scores_value")
 correlator(listings %>% select(cols_list))
 
 # create some custom features
@@ -49,13 +49,9 @@ listings <- listings %>% mutate(neighbourhood_class = case_when(
 # create box plots for categorical vs. price
 lyst <- c("is_cancellation_strict", "neighbourhood_group_cleansed",
           "room_type", "neighbourhood_class", "has_wifi", "has_fireplace",
-          "family_friendly", "has_hottub", "has_parking", "pets_allowed")
+          "family_friendly", "has_hottub", "has_parking", "pets_allowed", "host_is_superhost", "bed_type")
 lapply(lyst, function(i)ggplot(listings, aes_string(x=i, y="price")) + 
          theme(axis.text.x=element_text(angle=90,hjust=1)) + geom_bar(stat = 'summary', fun.y='mean'))
-
-
-
-# grouping location to make significant
 
 
 
