@@ -15,6 +15,11 @@ reviews <- read.csv(paste(data_root, "/resources/data/reviews.csv", sep=""))
 # fixing price data type for listings data
 listings$price <- as.numeric(gsub('\\$', '', listings$price))
 listings$cleaning_fee <- as.numeric(gsub('\\$', '', listings$cleaning_fee))
+listings$security_deposit = as.numeric(str_extract(listings$security_deposit, "(\\d)+"))
+listings$weekly_price = as.numeric(str_extract(listings$weekly_price, "(\\d)+"))
+listings$monthly_price = as.numeric(str_extract(listings$monthly_price, "(\\d)+"))
+listings$extra_people = as.numeric(str_extract(listings$extra_people, "(\\d)+"))
+listings$host_response_rate = as.numeric(str_extract(listings$host_response_rate, "(\\d)+"))
 
 calendar$price <- as.numeric(gsub('\\$', '', calendar$price))
 
