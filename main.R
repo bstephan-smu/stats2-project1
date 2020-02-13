@@ -21,6 +21,11 @@ listings$monthly_price = as.numeric(str_extract(listings$monthly_price, "(\\d)+"
 listings$extra_people = as.numeric(str_extract(listings$extra_people, "(\\d)+"))
 listings$host_response_rate = as.numeric(str_extract(listings$host_response_rate, "(\\d)+"))
 
+#Replacing NA with zero level for security deposit and cleaning fee
+listings$cleaning_fee = ifelse(is.na(listings$cleaning_fee), 0, listings$cleaning_fee)
+listings$security_deposit = ifelse(is.na(listings$security_deposit), 0, listings$security_deposit)
+
+
 calendar$price <- as.numeric(gsub('\\$', '', calendar$price))
 
 # adding some basic features
