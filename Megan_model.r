@@ -29,7 +29,22 @@ df_fullvar <- listings %>% select(-c('name', 'host_location','square_feet', 'lic
                                      'maximum_nights','calendar_updated','calendar_last_scraped','requires_license','license',
                                      'jurisdiction_names','cancellation_policy','require_guest_profile_picture','require_guest_phone_verification',
                                      'cleaning_fee','last_scraped','host_verifications','host_acceptance_rate','market',
-                                     'has_availability', 'neighbourhood_clean')) %>% drop_na() 
+                                     'has_availability', 'neighbourhood_cleansed')) %>% drop_na() 
+
+#Discovering major NA columns
+
+na_count <-sapply(listings, function(y) sum(length(which(is.na(y)))))
+
+#Host_response_rate - 523
+
+#first_review - 627 - this and below essentially no reviews
+#last_review - 627
+#all review_scores ~ 600-650
+#reviews_per_month - 627
+
+#FIXED
+#security_deposit - 1952
+#cleaning_fee - 1030
 
 #Pulling out neighborhood cleansed because it has levels that may appear in training but not test
 #Ie several with 1 value per level,.
@@ -90,6 +105,9 @@ price_model_fullvar = train(log_price ~ ., data=trainData_allvar, method='lasso'
 
 print(price_model_fullvar)
 
+resid_fullvar = resid(price_model_fullvar)
+hist(resid_fullvar)
+plot(resid_fullvar)
 
 # try without lasso 
 price_model_no_lasso = train(log_price ~ ., data=trainData, method='lm', 
@@ -127,8 +145,11 @@ testData$predictions <- predict
 testData %>% ggplot(aes(x=predictions, y=log_price)) + geom_point() + geom_smooth(method="lm") + 
   xlab('Predicted Price') + ylab('Actual Price') + ggtitle('Actual vs. Predicted: Log(Price [$])')
 
-#Predicting with thew new lambda model 
+#Issues remain with some singular observations w/ a level not in training. 
+#At the moment, I am removing those 1s from the test when they occur to run the test. 
+testData_allvar = testData_allvar %>% filter(zipcode != "99\n98122")
 
+#Predicting with thew new lambda model 
 predict <- predict(price_model_fullvar, testData_allvar)
 # Let's see how we did. Plot predictions against actual
 testData_allvar$predictions <- predict
