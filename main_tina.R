@@ -89,7 +89,6 @@ listings_edited %>%
   filter(is.na(log_price))
 
 
-str_match(calendar$price, "/$([0-9]+)")
 calendar$price <- as.numeric(gsub('\\$', '', calendar$price)) %>%
   mutate(price_num = )
 
@@ -105,15 +104,66 @@ calendar %>%
   group_by(date) %>% 
   summarize(total_available = sum(available_count))
 
-summary(reviews)
-review_grouped <- reviews %>%
-  count(date) %>%
-  mutate(date = as.Date(date)) %>%
-  mutate(logcount = log(n))
+review_grouped %>%
+  ggplot(aes(x=date, y=listing_count)) +
+  geom_point()
+
+head(review_grouped)
+mutate(logcount = log(n))
 summary(review_grouped)
 review_grouped %>%
   ggplot(aes(x=date, y=logcount)) +
   geom_point()
 
+library(tseries)
+summary(reviews)
 
+head(reviews)
+#number of listings by month year
+review_grouped_mo <- reviews %>%
+  mutate(date = as.Date(date)) %>%
+  mutate(month = format(date, "%m"), year = format(date, "%Y")) %>%
+  group_by(month, year) %>%
+  summarise(review_count_mo = sum(n_distinct(listing_id)))
+head(review_grouped_mo)
+
+review_grouped_day <- reviews %>%
+  mutate(date = as.Date(date)) %>%
+  count(date)
+head(review_grouped_day)
+reviews_ts = review_grouped_day %>%
+  mutate(month = format(date, "%m"), year = format(date, "%Y")) %>%
+  left_join(review_grouped_mo, by=c("month", "year")) %>%
+  mutate(normalized = n/review_count_mo)
+
+tail(reviews_ts,20)
+
+library(tswge)
+
+review_ts <- reviews %>%
+  mutate(date = as.Date(date))%>%
+  count(date) 
+
+head(reviews_ts, 20)
+adf.test(reviews_ts$normalized) #pvalue <.05 indicates data is stationary
+stationaryTS <- diff(reviews_ts$normalized, differences= 1)
+stationaryTS
+plot(stationaryTS, type="l", main="Differenced and Stationary")
+airbnb_reviews_lm_cv = train(data=review_grouped, 
+                           method = "lm",
+                           trControl = trainControl(method = "cv", number = 10, verboseIter = TRUE))
+library(forecast)
+
+write.csv(reviews_ts,"reviews_ts.csv", row.names = FALSE)
+
+train_length = length(stationaryTS) - 20
+ts = arima(stationaryTS[1:train_length], c(4,0,0))
+ts
+cast.ts<-forecast(ts,h=21)
+cast.ts["Point Forecast"]
+accuracy(cast.ts,stationaryTS[train_length:length(stationaryTS)])
+
+plot(forecast(ts,h=21))
+points(1:length(train),fitted(AR4),type="l",col="blue")
+points(1:40,Bill,type="l")
 
