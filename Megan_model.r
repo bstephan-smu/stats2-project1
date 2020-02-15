@@ -85,6 +85,13 @@ summary(general_model_no_cv)
 
 # AIC
 extractAIC(general_model_no_cv)
+
+rstudent(price_model_fullvar)
+
+cooks.distance(price_model_fullvar)
+
+
+
 # -------------------- STEP 3: TRAIN MODEL WITH CV -----------------------------------------------------#
 # step 4: train the model
 # define internal cross validation - 10 samples, 5 times
@@ -99,15 +106,31 @@ print(price_model)
 
 #New Lasso Model
 #full variables
+
+#df_fullvar$log_price2 = log(df_fullvar$price, base = 2)
+#df_fullvar = df_fullvar %>% select(-c('log_price', 'price')) 
+
 price_model_fullvar = train(log_price ~ ., data=trainData_allvar, method='lasso', 
                             na.action=na.exclude, preProcess=c("center", "scale"),
                             trControl=ctrl)
 
 print(price_model_fullvar)
 
+
 resid_fullvar = resid(price_model_fullvar)
 hist(resid_fullvar)
 plot(resid_fullvar)
+
+#Full Variables without lasso
+
+price_model_fullvar_lm = train(log_price ~ ., data=trainData_allvar, method='lm', 
+                            na.action=na.exclude, preProcess=c("center", "scale"),
+                            trControl=ctrl)
+
+price_model_fullvar_lm = train(price ~ ., data=trainData_allvar, method='lm', 
+                               na.action=na.exclude, preProcess=c("center", "scale"),
+                               trControl=ctrl)
+print(price_model_fullvar_lm)
 
 # try without lasso 
 price_model_no_lasso = train(log_price ~ ., data=trainData, method='lm', 
@@ -131,7 +154,7 @@ hist(price_resids)
 plot(trainData$log_price, price_resids)
 abline(0, 0)
 
-# check for variable importance - hasn't worked for LASSO model yet
+#check for variable importance - hasn't worked for LASSO model yet
 plot(varImp(price_model_no_lasso))
 
 plot(price_model_no_lasso)
@@ -154,6 +177,13 @@ predict <- predict(price_model_fullvar, testData_allvar)
 # Let's see how we did. Plot predictions against actual
 testData_allvar$predictions <- predict
 testData_allvar %>% ggplot(aes(x=predictions, y=log_price)) + geom_point() + geom_smooth(method="lm") + 
+  xlab('Predicted Price') + ylab('Actual Price') + ggtitle('Actual vs. Predicted: Log(Price [$])')
+
+###Why We logged price. 
+predict <- predict(price_model_fullvar_lm, testData_allvar)
+# Let's see how we did. Plot predictions against actual
+testData_allvar$predictions <- predict
+testData_allvar %>% ggplot(aes(x=predictions, y=price)) + geom_point() + geom_smooth(method="lm") + 
   xlab('Predicted Price') + ylab('Actual Price') + ggtitle('Actual vs. Predicted: Log(Price [$])')
 
 
