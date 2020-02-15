@@ -39,3 +39,22 @@ listings$has_parking = ifelse(grepl('Free Parking on Premises', listings$ameniti
 listings$pets_allowed = ifelse(grepl('Pets Allowed', listings$amenities, ignore.cas=TRUE)==TRUE, 1, 0)
 
 
+# grouping areas by general price point
+listings <- listings %>% mutate(neighbourhood_class = case_when(
+  neighbourhood_group_cleansed == 'Magnolia' ~ "Highest Demand",
+  neighbourhood_group_cleansed == 'Downtown' ~ "Highest Demand",
+  neighbourhood_group_cleansed == "Queen Anne" ~ "Highest Demand",
+  neighbourhood_group_cleansed == "Ballard" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Capitol Hill" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Cascade" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "Central Area" ~ "Medium Demand",
+  neighbourhood_group_cleansed == "West Seattle" ~ "Medium Demand",
+  TRUE ~ "Lowest Demand"
+))
+
+#logged variables
+
+listings$log_reviews <- log(listings$number_of_reviews)
+listings$log_price <- log(listings$price)
+
+
