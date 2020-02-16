@@ -90,6 +90,12 @@ Pacf(reviews_ts)
 
 # -------------------- STEP 3: FIT MODEL -----------------------------------------------------#
 
+#models with the data stationarized by log transform and differencing
+
+#auto arima picks arima(3,1,2)
+ARIMA.fit<-auto.arima(log(review_grouped_day$n),seasonal=TRUE,stepwise=FALSE)
+ARIMA.fit
+tsdisplay(residuals(ARIMA.fit), lag.max=50, main="Resid. Diagnostics ARIMA(3,1,2)")
 #log AR14 with year predictor shows good residual plots
 logar14year <-arima(log(review_grouped_day$n),order=c(14,0,0),xreg=predictor)
 tsdisplay(residuals(logar14year),lag.max=50,main="Resid. Diagnostics after log with ar14 and year predictor")
@@ -102,6 +108,8 @@ tsdisplay(residuals(logar31),lag.max=100,main="Resid. Diagnostics after log with
 #log AR14 with difference of 1 looks good but also still peaks at 14 and 28 lags
 logar14 <-arima(log(review_grouped_day$n),order=c(14,1,0))
 tsdisplay(residuals(logar14),lag.max=28,main="Resid. Diagnostics after log with arima 14, 1, 0")
+
+#models with the data stationarized by transforming data points into percent
 #Auto Arima picks arima(4,1,1)
 ARIMA.fit<-auto.arima(reviews_ts,seasonal=TRUE,stepwise=FALSE)
 ARIMA.fit
@@ -109,6 +117,9 @@ tsdisplay(residuals(ARIMA.fit),lag.max=15,main="Resid. Diagnostics Arima 4 1 1")
 #arima(14,1,1) looks pretty good
 ARIMA.fit <- arima(reviews_ts, order=c(14, 1, 1))
 tsdisplay(residuals(ARIMA.fit),lag.max=33,main="Resid. Diagnostics Arima 14 1 1")
+#arima(14,1,1) looks pretty good
+ARIMA.fit <- arima(reviews_ts, order=c(31, 1, 1))
+tsdisplay(residuals(ARIMA.fit),lag.max=33,main="Resid. Diagnostics Arima 31 1 1")
 
 #forecast the future with our arima model
 n = length(forecast(ARIMA.fit))
