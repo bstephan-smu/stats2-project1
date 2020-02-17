@@ -18,8 +18,9 @@ n = length(review_grouped_day$n)
 #scatterplot
 review_grouped_day %>%
   ggplot(aes(x=date, y=n)) +
-  geom_point()
-#ACF and PCF plots
+  geom_point() +
+  ggtitle("Airbnb Seattle Reviews Per Day")
+#ACF and PACF plots
 Acf(review_grouped_day$n[1:n/2]) #ACF looks different for first half and second half of data
 Acf(review_grouped_day$n[n/2:n])
 Acf(review_grouped_day$n)
@@ -30,7 +31,8 @@ review_grouped_day <- review_grouped_day %>%
   mutate(logn = log(n)) 
 review_grouped_day %>%
   ggplot(aes(x=date, y=log(n))) +
-  geom_point()
+  geom_point() +
+  ggtitle("Log Reviews Per Day")
 Acf(review_grouped_day$logn) #ACF never dies
 Pacf(review_grouped_day$logn)
 
@@ -43,7 +45,7 @@ date2 = as.numeric(review_grouped_day$date)^2
 reviews_lm = lm(n~date+date2, data=review_grouped_day)
 lm_predictions <- predict(reviews_lm)
 predictor = lm_predictions
-plot(lm_predictions)
+plot(lm_predictions, main="Linear Model with Date Predictor")
 plot(lm_predictions,review_grouped_day$n, ylab = "review count")
 #LM as predictor residual plots still show increasing variance--not stationary
 simpleols<-arima(review_grouped_day$n,order=c(0,0,0),xreg=predictor)
@@ -84,7 +86,8 @@ reviews_ts = reviews_percentized$percentized
 #scatterplot is looking pretty stationary but ACF seems never to die
 reviews_percentized %>%
   ggplot(aes(x=date, y=percentized)) +
-  geom_point()
+  geom_point() + 
+  ggtitle("Scatterplot of Reviews as Percent of Previous Month Reviews")
 Acf(reviews_ts)
 Pacf(reviews_ts)
 
@@ -96,6 +99,11 @@ Pacf(reviews_ts)
 ARIMA.fit<-auto.arima(log(review_grouped_day$n),seasonal=TRUE,stepwise=FALSE)
 ARIMA.fit
 tsdisplay(residuals(ARIMA.fit), lag.max=50, main="Resid. Diagnostics ARIMA(3,1,2)")
+#weekly cycle shows we should have at least an AR7
+tsdisplay(review_grouped_day$n, lag.max = 20,xlim=range(1200:1400))
+#LogAR7 shows peaks in ACF every 7
+logar7 <- arima(log(review_grouped_day$n), order=c(7,0,0))
+tsdisplay(residuals(logar7),lag.max=30,main="Resid. Diagnostics after log with AR7")
 #log AR14 with year predictor shows good residual plots
 logar14year <-arima(log(review_grouped_day$n),order=c(14,0,0),xreg=predictor)
 tsdisplay(residuals(logar14year),lag.max=50,main="Resid. Diagnostics after log with ar14 and year predictor")
