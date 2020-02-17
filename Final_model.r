@@ -70,6 +70,9 @@ testData$predictions <- predict
 testData %>% ggplot(aes(x=predictions, y=log_price)) + geom_point() + geom_smooth(method="lm") + 
   xlab('Predicted Price') + ylab('Actual Price') + ggtitle('Actual vs. Predicted: Log(Price [$])')
 
+#RMSE 
+RMSE(predict, testData$log_price)
+
 
 
 ###-----------------------Lasso Selected Model----------------------------###
@@ -89,7 +92,7 @@ df_fullvar <- listings %>% select(-c('name', 'host_location','square_feet', 'lic
                                      'maximum_nights','calendar_updated','calendar_last_scraped','requires_license','license',
                                      'jurisdiction_names','cancellation_policy','require_guest_profile_picture','require_guest_phone_verification',
                                      'cleaning_fee','last_scraped','host_verifications','host_acceptance_rate','market',
-                                     'has_availability', 'neighbourhood_cleansed')) %>% drop_na() 
+                                     'has_availability', 'neighbourhood_cleansed', 'price')) %>% drop_na() 
 
 # ---------------------STEP 1: SPLIT INTO TRAINING AND TEST SETS -------------------------------#
 # Get row numbers for the training data
@@ -113,7 +116,10 @@ print(price_model_fullvar)
 
 resid_fullvar = resid(price_model_fullvar)
 hist(resid_fullvar)
-plot(resid_fullvar)
+plot(resid_fullvar, ylab = "Residuals")
+
+#Residuals by Actual 
+plot(trainData_allvar$log_price, resid_fullvar, ylab = "Residuals", xlab = "Actual Log Training Price")
 
 
 #Full Variables without lasso
@@ -127,14 +133,46 @@ price_model_fullvar_lm = train(price ~ ., data=trainData_allvar, method='lm',
                                trControl=ctrl)
 print(price_model_fullvar_lm)
 
+
+
 # -------------------STEP 4: RUN PREDICTIONS ON TEST SET ----------------------------------------#
 
 
-
+testData_allvar = testData_allvar %>% filter(property_type != "Yurt")
 #Predicting with thew new lambda model 
-predict <- predict(price_model_fullvar, testData_allvar)
+predict_fullvar <- predict(price_model_fullvar, testData_allvar)
 # Let's see how we did. Plot predictions against actual
-testData_allvar$predictions <- predict
+testData_allvar$predictions <- predict_fullvar
 testData_allvar %>% ggplot(aes(x=predictions, y=log_price)) + geom_point() + geom_smooth(method="lm") + 
   xlab('Predicted Price') + ylab('Actual Price') + ggtitle('Actual vs. Predicted: Log(Price [$])')
+
+RMSE(predict_fullvar, testData_allvar$log_price)
+
+#-------------------- Predicting on Price, not Log_Price ----------------------#
+df_fullvar_p <- listings %>% select(-c('name', 'host_location','square_feet', 'license', 'host_name','smart_location',
+                                     'id','listing_url','scrape_id', 'summary', 'space','description', 'experiences_offered',
+                                     'neighborhood_overview', 'notes', 'transit','thumbnail_url','medium_url','picture_url',
+                                     'xl_picture_url','host_id','host_url','host_name', 'host_location', 'host_about','host_thumbnail_url',
+                                     'host_picture_url','host_neighbourhood', 'host_has_profile_pic','host_identity_verified',
+                                     'street','neighbourhood','city','state','smart_location','country_code','country','latitude',
+                                     'longitude','is_location_exact','amenities','weekly_price','monthly_price','minimum_nights',
+                                     'maximum_nights','calendar_updated','calendar_last_scraped','requires_license','license',
+                                     'jurisdiction_names','cancellation_policy','require_guest_profile_picture','require_guest_phone_verification',
+                                     'cleaning_fee','last_scraped','host_verifications','host_acceptance_rate','market',
+                                     'has_availability', 'neighbourhood_cleansed', 'log_price')) %>% drop_na() 
+
+# Get row numbers for the training data
+trainRowNumbers_allvar_p <- createDataPartition(df_fullvar_p$price, p=0.8, list=FALSE)
+
+# Create the training  dataset
+trainData_allvar_p <- df_fullvar_p[trainRowNumbers_allvar_p,]
+
+# Create the test dataset
+testData_allvar_p <- df_fullvar_p[-trainRowNumbers_allvar_p,]
+
+price_model_nolog = train(price ~ ., data=trainData_allvar_p, method='lasso', 
+                          na.action=na.exclude, preProcess=c("center", "scale"),
+                          trControl=ctrl)
+testData_allvar_p = testData_allvar_p %>% filter(property_type !=  "Chalet")
+plot(trainData_allvar_p$price,resid(price_model_nolog), ylab = "Residuals of Non - Logged Price Model", xlab = "Actual Price")
 
